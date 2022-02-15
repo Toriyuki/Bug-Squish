@@ -10,7 +10,7 @@ let maxTime = 30;
 let score = 0;
 
 function preload() {
-  bugSprite = loadImage("bugSprite.png");
+  bugSprite = loadImage("BugSprite.png");
 }
 
 function setup() {
