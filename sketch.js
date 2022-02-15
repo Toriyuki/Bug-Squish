@@ -6,7 +6,7 @@ let xMax = 800;
 let yMax = 600;
 
 let timer;
-let maxTime = 3;
+let maxTime = 30;
 let score = 0;
 let totalClick = 0;
 let successClick = 0;
