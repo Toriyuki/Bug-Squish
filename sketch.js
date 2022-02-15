@@ -67,15 +67,17 @@ function endScreen() {
   text("Bugs Killed:", 100, 200);
   text(score, 575, 200);
   textSize(60);
-  text("Acc:", 150, 300);
-  text(acc + "%", 350, 300);
-  rect(225, 350, 300, 100);
-  text("Try Again", 245, 420);
-  if(mouseIsPressed) {
-    if((mouseX > 225) && (mouseX < 525) && (mouseY > 350) && (mouseY < 450)) {
-      location.reload();
+  text("Acc:", 175, 300);
+  text(acc + "%", 375, 300);
+  if(countdown < -2) {
+    rect(225, 350, 300, 100);
+    text("Try Again", 245, 420);
+    if(mouseIsPressed) {
+      if((mouseX > 225) && (mouseX < 525) && (mouseY > 350) && (mouseY < 450)) {
+        location.reload();
+      }
     }
-  }
+}
 }
 
 function addBug() {
