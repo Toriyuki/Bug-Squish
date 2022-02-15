@@ -6,8 +6,11 @@ let xMax = 800;
 let yMax = 600;
 
 let timer;
-let maxTime = 30;
+let maxTime = 3;
 let score = 0;
+let totalClick = 0;
+let successClick = 0;
+let acc;
 
 function preload() {
   bugSprite = loadImage("BugSprite.png");
@@ -42,9 +45,17 @@ function gameScreen() {
   textSize(30);
   text("Time Remaining: ", 10, 30);
   text(countdown, 250, 30);
-  text("Score: ", 500, 30);
-  text(score, 600, 30);
-  line(0, 40, 800, 40);
+  text("Score: ", 400, 30);
+  text(score, 500, 30);
+  text("Acc: ", 600, 30);
+  if(totalClick == 0) {
+    acc = 0;
+  }
+  else {
+    acc = parseFloat((successClick / totalClick) * 100).toFixed(2);
+  }
+  text(acc + "%", 680, 30);
+  line(0, 40, xMax, 40);
   for(var i = 0; i < bugArray.length; i++) {
     bugArray[i].draw();
   }
@@ -55,11 +66,13 @@ function endScreen() {
   textSize(80);
   text("Bugs Killed:", 100, 200);
   text(score, 575, 200);
-  rect(250, 300, 300, 100);
   textSize(60);
-  text("Try Again", 270, 370);
+  text("Acc:", 150, 300);
+  text(acc + "%", 350, 300);
+  rect(225, 350, 300, 100);
+  text("Try Again", 245, 420);
   if(mouseIsPressed) {
-    if((mouseX > 250) && (mouseX < 550) && (mouseY > 300) && (mouseY < 400)) {
+    if((mouseX > 225) && (mouseX < 525) && (mouseY > 350) && (mouseY < 450)) {
       location.reload();
     }
   }
@@ -106,6 +119,7 @@ function checkBoundary() {
 }
 
 function killDetection() {
+  let onceClick = true;
   for(var i = 0; i < bugArray.length; i++) {
     let bugX = bugArray[i].getX();
     let bugY = bugArray[i].getY();
@@ -113,11 +127,16 @@ function killDetection() {
       bugArray[i].kill();
       addBug();
       score++;
+      if(onceClick) {
+        successClick++;
+        onceClick = false;
+      }
     }
   }
 }
 
 function mousePressed() {
+  totalClick++;
   killDetection();
 }
 
