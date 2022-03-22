@@ -15,8 +15,10 @@ let score = 0;
 let totalClick = 0;
 let successClick = 0;
 let acc;
+let streak = 0;
 
-let hitNoise = new Tone.NoiseSynth().toDestination();
+let comboNote = ["C5", "D5", "E5", "F5", "G5"];
+let hitNoise = new Tone.Synth().toDestination();
 
 function preload() {
   bugSprite = loadImage("BugSprite.png");
@@ -25,10 +27,6 @@ function preload() {
 function setup() {
   createCanvas(xMax, yMax);
   imageMode(CENTER);
-
-  for(var i = 0; i < STARTING_BUG_COUNT; i++) {
-    addBug();
-  }
 }
 
 function draw() {
@@ -70,18 +68,21 @@ function startScreen() {
       base_speed = .75;
       increase_speed = .015;
       state = "game";
+      startingBugs();
     }
     else if((mouseX > 150) && (mouseX < 550) && (mouseY > 300) && (mouseY < 400)) {
       difficulty = "Normal";
       base_speed = 1;
       increase_speed = .03;
       state = "game";
+      startingBugs();
     }
     else if((mouseX > 150) && (mouseX < 550) && (mouseY > 450) && (mouseY < 550)) {
       difficulty = "Hard";
       base_speed = 1.15;
       increase_speed = .035;
       state = "game";
+      startingBugs();
     }
   }
 }
@@ -138,6 +139,12 @@ function endScreen() {
   }
 }
 
+function startingBugs() {
+  for(var i = 0; i < STARTING_BUG_COUNT; i++) {
+    addBug();
+  }
+}
+
 function addBug() {
   let tempBug = new Bug(bugSprite, Math.floor(random(0, xMax)), Math.floor(random(60, yMax)));
   setRandomMovement(tempBug);
@@ -181,19 +188,31 @@ function checkBoundary() {
 
 function killDetection() {
   let onceClick = true;
+  let soundPlayer = true;
+  let hitBug = false;
   for(var i = 0; i < bugArray.length; i++) {
     let bugX = bugArray[i].getX();
     let bugY = bugArray[i].getY();
     if(!bugArray[i].isDead() &&(mouseX > (bugX-30)) && (mouseX < bugX+30) && (mouseY > (bugY-30)) && (mouseY < (bugY+30))) {
       bugArray[i].kill();
+      hitBug = true;
       addBug();
       score++;
-      hitNoise.triggerAttackRelease("C4", "8n");
+      if(soundPlayer) {
+        hitNoise.triggerAttackRelease(comboNote[streak], "8n");
+        soundPlayer = false;
+        if(streak < comboNote.length-1) {
+          streak++;
+        }
+      }
       if(onceClick) {
         successClick++;
         onceClick = false;
       }
     }
+  }
+  if(!hitBug) {
+    streak = 0;
   }
 }
 
