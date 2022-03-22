@@ -16,6 +16,8 @@ let totalClick = 0;
 let successClick = 0;
 let acc;
 
+let hitNoise = new Tone.NoiseSynth().toDestination();
+
 function preload() {
   bugSprite = loadImage("BugSprite.png");
 }
@@ -186,6 +188,7 @@ function killDetection() {
       bugArray[i].kill();
       addBug();
       score++;
+      hitNoise.triggerAttackRelease("C4", "8n");
       if(onceClick) {
         successClick++;
         onceClick = false;
