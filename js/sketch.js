@@ -15,6 +15,8 @@ let score = 0;
 let totalClick = 0;
 let successClick = 0;
 let acc;
+let musicButton;
+let music = false;
 let streak = 0;
 let rampUp = false;
 
@@ -132,8 +134,10 @@ function setup() {
   createCanvas(xMax, yMax);
   imageMode(CENTER);
 
-  Tone.start();
-  startIntro();
+  musicButton = createButton("music");
+  musicButton.size(100, 25);
+  musicButton.position(675, 550);
+  musicButton.mousePressed( () => startMusic());
 }
 
 function draw() {
@@ -148,8 +152,10 @@ function draw() {
     gameScreen();
     if(countdown <= 0) {
       state = "end";
-      stopAudio();
-      startEndAudio();
+      if(music) {
+        stopAudio();
+        startEndAudio();
+      }
     }
   }
   else if (state == "end"){
@@ -158,7 +164,6 @@ function draw() {
     }
     endScreen();
   }
-
 }
 
 function startScreen() {
@@ -209,9 +214,11 @@ function gameScreen() {
       bugArray[i].setChanage(false);
     }
   }
-  if(!rampUp && (score > 20)) {
-    Tone.Transport.bpm.rampTo(160, 5);
-    rampUp = true;
+  if(music) {
+    if(!rampUp && (score > 20)) {
+      Tone.Transport.bpm.rampTo(160, 5);
+      rampUp = true;
+    }
   }
   checkBoundary();
 }
@@ -246,8 +253,23 @@ function startScreenSelection(newDiff, newSpeed, inc_speed) {
   increase_speed = inc_speed;
   state = "game";
   startingBugs();
-  stopAudio();
-  startGameAudio();
+  if(music) {
+    stopAudio();
+    startGameAudio();
+  }
+  musicButton.hide();
+}
+
+function startMusic() {
+  Tone.start();
+  if(!music) {
+    startIntro();
+    music = true;
+  }
+  else {
+    Tone.Transport.pause();
+    music = false;
+  }
 }
 
 function startIntro() {
@@ -275,6 +297,7 @@ function stopGameAudio() {
 }
 
 function startEndAudio() {
+  Tone.Transport.bpm.value = 100;
   endMelody.loop = 2;
   endMelody.loopEnd = "1m";
   endMelody.start();
@@ -282,9 +305,9 @@ function startEndAudio() {
 }
 
 function stopAudio() {
+  Tone.Transport.pause();
   stopIntro();
   stopGameAudio();
-  Tone.Transport.pause();
 }
 
 function startingBugs() {
