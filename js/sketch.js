@@ -16,9 +16,113 @@ let totalClick = 0;
 let successClick = 0;
 let acc;
 let streak = 0;
+let rampUp = false;
 
 let comboNote = ["C5", "D5", "E5", "F5", "G5"];
 let hitNoise = new Tone.Synth().toDestination();
+
+let introNoise = new Tone.MonoSynth().toDestination({
+  oscillator: {
+    type: "sawtooth"
+  },
+  filter: {
+    Q: 3,
+    type: "highpass",
+    rolloff: -12
+  },
+  envelope: {
+    attack: 0.01,
+    decay: 0.3,
+    sustain: 0,
+    release: 0.5
+  },
+  filterEnvelope: {
+    attack: 0.01,
+    decay: 0.1,
+    sustain: 0,
+    release: 0.1,
+    baseFrequency: 800,
+    octaves: -1.2
+  }
+});
+
+let introBass = new Tone.DuoSynth().toDestination();
+
+let introBassline = new Tone.Pattern((time, note) => {
+  if(note != null) {
+    introBass.triggerAttackRelease(note, "32n", time+.20);
+    introBass.triggerAttackRelease(note, "32n", time+.45);
+  }
+}, [null, null, null, null, null, "C4"]);
+
+let introMelody = new Tone.Sequence((time, note) => {
+  if(note != null) {
+    introNoise.triggerAttackRelease(note, "16n", time);
+  }
+}, ["C3", "C3", "D3", "C3", "E3", null, "F3", "F3", "E3", "D3", "C3", null,
+  "C3", "C3", "D3", "C3", "E3", null, "F3", "F3", "E3", "D3", "C3", null,
+  "C4", "C4", "D4", "C4", "E4", null, "F4", "F4", "E4", "D4", "C4", null,
+  "C4", "C4", "D4", "C4", "E4", null, "F4", "F4", "E4", "D4", "C4", null]);
+
+let gameNoise = new Tone.Synth().toDestination();
+
+let melodyScore = [
+  {time: "0:0", note: "F4", beat: "4n"},
+  {time: "0:1", note: "F4", beat: "4t"},
+  {time: "0:1.25", note: "G4", beat: "4t"},
+  {time: "0:1.50", note: "A4", beat: "4t"},
+  {time: "0:2", note: "F4", beat: "4n"},
+  {time: "0:3", note: "D4", beat: "4n"},
+  {time: "1:0", note: "F4", beat: "4n"},
+  {time: "1:1", note: "C4", beat: "2n"},
+  {time: "2:0", note: "A#3", beat: "4n"},
+  {time: "2:1", note: "A#3", beat: "4t"},
+  {time: "2:1.25", note: "C4", beat: "4t"},
+  {time: "2:1.50", note: "D4", beat: "4t"},
+  {time: "2:2", note: "A#3", beat: "4n"},
+  {time: "2:3", note: "A3", beat: "4n"},
+  {time: "3:0", note: "A#3", beat: "4n"},
+  {time: "3:1", note: "C4", beat: "4n"},
+]
+
+let gameMelody = new Tone.Part((time, value) => {
+  //const now = Tone.now();
+  gameNoise.triggerAttackRelease(value.note, value.beat, time);
+}, melodyScore);
+
+let endNoise = new Tone.FMSynth({
+  harmonicity: 8,
+  modulationIndex: 2,
+  oscillator: {
+    type: "sine"
+  },
+  envelope: {
+    attack: 0.001,
+    decay: 2,
+    sustain: 0.1,
+    release: 2
+  },
+  modulation: {
+    type: "square"
+  },
+  modulationEnvelope: {
+    attack: 0.002,
+    decay: 0.2,
+    sustain: 0,
+    release: 0.2
+  }
+}).toDestination();
+
+let endScore = [
+  {time: "0:0", note: "C5"},
+  {time: "0:1", note: "E5"},
+  {time: "0:2", note: "G5"},
+  {time: "0:3", note: "C6"},
+]
+
+let endMelody = new Tone.Part((time, value) => {
+  endNoise.triggerAttackRelease(value.note, "16n", time);
+}, endScore);
 
 function preload() {
   bugSprite = loadImage("BugSprite.png");
@@ -27,6 +131,9 @@ function preload() {
 function setup() {
   createCanvas(xMax, yMax);
   imageMode(CENTER);
+
+  Tone.start();
+  startIntro();
 }
 
 function draw() {
@@ -41,6 +148,8 @@ function draw() {
     gameScreen();
     if(countdown <= 0) {
       state = "end";
+      stopAudio();
+      startEndAudio();
     }
   }
   else if (state == "end"){
@@ -64,25 +173,13 @@ function startScreen() {
   text("Hard", 250, 525);
   if(mouseIsPressed) {
     if((mouseX > 150) && (mouseX < 550) && (mouseY > 150) && (mouseY < 250)) {
-      difficulty = "Easy";
-      base_speed = .75;
-      increase_speed = .015;
-      state = "game";
-      startingBugs();
+      startScreenSelection("Easy", .75, .015);
     }
     else if((mouseX > 150) && (mouseX < 550) && (mouseY > 300) && (mouseY < 400)) {
-      difficulty = "Normal";
-      base_speed = 1;
-      increase_speed = .03;
-      state = "game";
-      startingBugs();
+      startScreenSelection("Normal", 1, .03);
     }
     else if((mouseX > 150) && (mouseX < 550) && (mouseY > 450) && (mouseY < 550)) {
-      difficulty = "Hard";
-      base_speed = 1.15;
-      increase_speed = .035;
-      state = "game";
-      startingBugs();
+      startScreenSelection("hard", 1.15, 0.35);
     }
   }
 }
@@ -112,6 +209,10 @@ function gameScreen() {
       bugArray[i].setChanage(false);
     }
   }
+  if(!rampUp && (score > 20)) {
+    Tone.Transport.bpm.rampTo(160, 5);
+    rampUp = true;
+  }
   checkBoundary();
 }
 
@@ -137,6 +238,53 @@ function endScreen() {
       }
     }
   }
+}
+
+function startScreenSelection(newDiff, newSpeed, inc_speed) {
+  difficulty = newDiff;
+  base_speed = newSpeed;
+  increase_speed = inc_speed;
+  state = "game";
+  startingBugs();
+  stopAudio();
+  startGameAudio();
+}
+
+function startIntro() {
+  Tone.Transport.bpm.value = 120;
+  introMelody.start();
+  introBassline.start();
+  Tone.Transport.start();
+}
+
+function stopIntro() {
+  introMelody.stop();
+  introBassline.stop();
+}
+
+function startGameAudio() {
+  Tone.Transport.bpm.rampTo(100, 0.1);
+  gameMelody.loop = 100;
+  gameMelody.loopEnd = "4m";
+  gameMelody.start();
+  Tone.Transport.start();
+}
+
+function stopGameAudio() {
+  gameMelody.stop();
+}
+
+function startEndAudio() {
+  endMelody.loop = 2;
+  gameMelody.loopEnd = "1m";
+  endMelody.start();
+  Tone.Transport.start();
+}
+
+function stopAudio() {
+  stopIntro();
+  stopGameAudio();
+  Tone.Transport.pause();
 }
 
 function startingBugs() {
@@ -213,19 +361,22 @@ function killDetection() {
   }
   if(!hitBug) {
     streak = 0;
+    hitNoise.triggerAttackRelease("C3", "8n");
   }
 }
 
 function mousePressed() {
   totalClick++;
-  killDetection();
-}
-
-function keyPressed() {
-  if(keyCode == RIGHT_ARROW) {
-    addBug();
+  if(state == "game") {
+    killDetection();
   }
 }
+
+//function keyPressed() {
+//  if(keyCode == RIGHT_ARROW) {
+//    addBug();
+//  }
+//}
 
 class Bug {
   constructor(spriteSheet, x, y) {
