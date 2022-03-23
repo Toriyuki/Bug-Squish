@@ -276,7 +276,7 @@ function stopGameAudio() {
 
 function startEndAudio() {
   endMelody.loop = 2;
-  gameMelody.loopEnd = "1m";
+  endMelody.loopEnd = "1m";
   endMelody.start();
   Tone.Transport.start();
 }
