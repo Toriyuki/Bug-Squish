@@ -203,7 +203,7 @@ function gameScreen() {
     acc = parseFloat((successClick / totalClick) * 100).toFixed(2);
   }
   text(acc + "%", 680, 30);
-  line(0, 40, xMax, 40);  
+  line(0, 40, xMax, 40);
   for(var i = 0; i < bugArray.length; i++) {
     bugArray[i].draw();
     if((difficulty == "Hard") && (!bugArray[i].hasChanged()) && (countdown % 3 == 0)) {
